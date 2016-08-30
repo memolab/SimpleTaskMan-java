@@ -84,7 +84,7 @@ class WorkerQueue {
     /* The amount of time a single task alive in seconds */
     public int MaxTaskLiveTime = 20;
 
-    private Executor executor;
+    protected Executor executor;
     protected LinkedBlockingQueue<Runnable> queue;
     public ConcurrentHashMap<String, Future> futureMap;
     public ConcurrentHashMap<String, String> queueLinked;
@@ -104,7 +104,7 @@ class WorkerQueue {
         }
     }
 
-    public String create(String[] li){
+    public String create(String[] li) {
         TaskJob task = new TaskJob(li[0]);
         System.out.printf("Scheduling ID:%s  file-link:%s\n", task.ID, task.SrcFile);
 
@@ -143,14 +143,17 @@ class WorkerQueue {
         queueLinked.remove(id);
     }
 
-    public void ExecuteLinked(String rid) {
+    public void executeLinked(String rid) {
         String link = queueLinked.get(rid);
         if (link != null) {
             Future fr = futureMap.get(link);
             if (fr != null && !fr.isDone()) {
                 executor.execute((Runnable) fr);
+                this.removeExecuteLink(rid);
             }
         }
+
+        futureMap.remove(rid);
     }
 
     public void pause() {

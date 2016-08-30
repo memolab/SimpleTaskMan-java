@@ -1,6 +1,5 @@
 package com.company;
 
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.RunnableFuture;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -13,6 +12,7 @@ public class Executor extends ThreadPoolExecutor {
     private ReentrantLock lock;
     private Condition condition;
     private WorkerQueue workQueue;
+
     public Executor(int corePoolSize, int maximumPoolSize, long keepAliveTime, TimeUnit unit, WorkerQueue workQueue) {
         super(corePoolSize, maximumPoolSize, keepAliveTime, unit, workQueue.queue);
         this.workQueue = workQueue;
@@ -42,7 +42,7 @@ public class Executor extends ThreadPoolExecutor {
     @Override
     protected void afterExecute(Runnable runnable, Throwable throwable) {
         super.afterExecute(runnable, throwable);
-        workQueue.ExecuteLinked(((FutureTaskJob)runnable).getTask().toString());
+        workQueue.executeLinked(((FutureTaskJob) runnable).getTask().toString());
     }
 
     public boolean isRunning() {
