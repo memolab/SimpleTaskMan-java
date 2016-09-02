@@ -4,6 +4,11 @@ import java.util.UUID;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
 
+
+interface ITask {
+    public void execute();
+}
+
 public class TaskJob implements Runnable, ITask {
     public final String ID;
     public final String SrcFile;
@@ -18,6 +23,7 @@ public class TaskJob implements Runnable, ITask {
         this.execute();
     }
 
+    @Override
     public void execute() {
         int randomNum = 2 + (int) (Math.random() * 10);
         Main.LOGGER.info(String.format("Execute: ID:%s, %s, sleep..%ss", ID, SrcFile, randomNum));
@@ -32,7 +38,6 @@ public class TaskJob implements Runnable, ITask {
     public String toString() {
         return this.ID;
     }
-
 }
 
 class FutureTaskJob<V> extends FutureTask<V> {
@@ -45,6 +50,6 @@ class FutureTaskJob<V> extends FutureTask<V> {
     }
 
     public Runnable getTask() {
-        return task;
+        return this.task;
     }
 }

@@ -1,10 +1,8 @@
 package com.company;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
-import java.util.LinkedList;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Scanner;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
@@ -13,11 +11,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.FileHandler;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
+import java.util.stream.Stream;
 
-
-interface ITask {
-    public void execute();
-}
 
 public class Main {
     public static final Logger LOGGER = Logger.getLogger(Main.class.getName());
@@ -92,15 +87,20 @@ class WorkerQueue {
 
     public void start() {
         int processors = Runtime.getRuntime().availableProcessors();
-        queue = new LinkedBlockingQueue<Runnable>();
+        queue = new LinkedBlockingQueue<>();
 
         futureMap = new ConcurrentHashMap<>();
         queueLinked = new ConcurrentHashMap<>();
         queueLinkedAll = new ConcurrentHashMap<>();
 
         executor = new Executor(processors, MaxPool, MaxTaskLiveTime, TimeUnit.SECONDS, this);
-        for (String[] li : this.getTasksList()) {
-            create(li);
+
+        try (Stream<String> stream = Files.lines(Paths.get(System.getProperty("user.dir"), this.TasklistSrc))) {
+            stream.map(String::trim)
+                    .map(s -> s.split("::"))
+                    .forEach(this::create);
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 
@@ -131,15 +131,18 @@ class WorkerQueue {
         if (t != null) {
             boolean re = t.cancel(false);
             re = executor.remove(t);
+            executor.purge();
             futureMap.remove(id);
-            queueLinked.remove(id);
+            removeExecuteLink(id);
             return re;
         }
         return false;
     }
 
     public void removeExecuteLink(String id) {
-        queueLinked.remove(queueLinked.get(id));
+        if(queueLinked.get(id) != null){
+            queueLinked.remove(queueLinked.get(id));
+        }
         queueLinked.remove(id);
     }
 
@@ -168,20 +171,4 @@ class WorkerQueue {
         queue.clear();
     }
 
-    private LinkedList<String[]> getTasksList() {
-        LinkedList li = new LinkedList();
-        try (BufferedReader br = new BufferedReader(new FileReader(new File(System.getProperty("user.dir"), this.TasklistSrc)))) {
-            String linLink;
-
-            while ((linLink = br.readLine()) != null) {
-                String[] srcLink = linLink.split("::");
-                li.add(srcLink);
-            }
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        return li;
-    }
 }
